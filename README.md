@@ -1,49 +1,61 @@
 # Social
 
-API Go minimale, sans dependance externe. Prerequis : Go 1.27.0 ou plus recent.
+The social networking component of the ODIN application. Requires Go 1.27.0 or later.
 
-## Demarrage local (PowerShell)
+## Run locally
+
+On Windows (PowerShell):
 
 ```powershell
 go run ./cmd/api
 ```
 
-Dans un second terminal :
+In a second terminal:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8080/health
 ```
 
-La route retourne HTTP 200 et `{"status":"ok"}`. Arreter avec Ctrl+C.
-Cette route verifie que le serveur HTTP repond ; aucune base de donnees n'est encore connectee.
+On Linux or macOS (Bash/Zsh), run the same Go command and check the endpoint with:
+
+```sh
+curl http://127.0.0.1:8080/health
+```
 
 ## Configuration
 
-Par defaut, le serveur ecoute sur `127.0.0.1:8080`. Pour changer le port :
+By default, the server listens on `127.0.0.1:8080`. To change the port on Windows (PowerShell):
 
 ```powershell
 $env:HTTP_ADDR = "127.0.0.1:8081"
 go run ./cmd/api
 ```
 
-`.env.exemple` documente les variables. Les fichiers `.env` ne sont pas charges automatiquement.
-La configuration est lue dans l'environnement du processus.
+On Linux or macOS (Bash/Zsh):
 
-## Verification et compilation
+```sh
+export HTTP_ADDR=127.0.0.1:8081
+go run ./cmd/api
+```
 
-```powershell
+`.env.exemple` documents the environment variables. `.env` files are not loaded automatically.
+Configuration is read from the process environment.
+
+## Checks and build
+
+```sh
 go test ./...
 go vet ./...
 go build -o bin/ ./cmd/...
 ```
 
-Le binaire de l'API sous Windows est `bin/api.exe`.
-Si Make est installe, les commandes `make run`, `make test`, `make vet`,
-`make build` et `make fmt` sont egalement disponibles.
+The API executable is `bin/api.exe` on Windows and `bin/api` on Linux and macOS.
+If Make is installed, `make run`, `make test`, `make vet`,
+`make build`, and `make fmt` are also available.
 
 ## Structure
 
-- `cmd/api` : serveur HTTP et routes.
-- `config` : lecture et validation de la configuration.
-- `db` : emplacement reserve a l'acces aux donnees.
-- `cmd/migrate` : commande reservee aux migrations ; elle retourne une erreur explicite tant que la base n'est pas configuree.
+- `cmd/api`: HTTP server and routes.
+- `config`: configuration loading and validation.
+- `db`: reserved for data access.
+- `cmd/migrate`: reserved for migrations; it returns an explicit error until the database is configured.
