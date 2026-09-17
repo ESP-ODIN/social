@@ -1,4 +1,4 @@
-.PHONY: run build test vet fmt
+.PHONY: run build test vet fmt docker-build docker-dev
 
 run:
 	go run ./cmd/api
@@ -14,3 +14,16 @@ vet:
 
 fmt:
 	gofmt -w cmd config db
+
+docker-build:
+	docker build -t social-api .
+
+# Lance l'API en local avec hot-reload (bind mount du code) et l'expose sur le port 8090.
+docker-dev:
+	docker run --rm -it \
+		-p 8090:8080 \
+		--env-file .env \
+		-e HTTP_ADDR=0.0.0.0:8080 \
+		-v "$(PWD)":/app \
+		-v /app/tmp \
+		social-api

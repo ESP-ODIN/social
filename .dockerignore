@@ -1,7 +1,7 @@
+.git
 .env
 .env.*
 !.env.exemple
-.idea/
 bin/
 tmp/
 coverage.out
