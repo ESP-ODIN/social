@@ -1,7 +1,8 @@
 .env
 .env.*
-!.env.exemple
+!.env.example
 .idea/
+.go-cache/
 bin/
 tmp/
 coverage.out

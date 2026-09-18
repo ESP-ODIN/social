@@ -1,7 +1,8 @@
 .git
 .env
 .env.*
-!.env.exemple
+!.env.example
+.go-cache/
 bin/
 tmp/
 coverage.out
