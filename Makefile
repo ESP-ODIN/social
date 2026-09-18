@@ -24,6 +24,6 @@ docker-dev:
 		-p 8090:8080 \
 		--env-file .env \
 		-e HTTP_ADDR=0.0.0.0:8080 \
-		-v "$(PWD)":/app \
+		-v "$(CURDIR)":/app \
 		-v /app/tmp \
 		social-api

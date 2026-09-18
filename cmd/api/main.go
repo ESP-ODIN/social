@@ -14,9 +14,15 @@ import (
 
 	"social/config"
 	"social/db"
+	repositoryimpl "social/internal/repository/implementation"
+	"social/internal/router"
+	serviceimpl "social/internal/service/implementation"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	godotenv.Load()
 	if err := run(); err != nil {
 		slog.Error("API stopped", "error", err)
 		os.Exit(1)
@@ -40,7 +46,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           routes(),
+		Handler:           router.New(pool, serviceimpl.NewPostService(repositoryimpl.NewPostRepository(pool)), cfg.JWTSecretKey),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
