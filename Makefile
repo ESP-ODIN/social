@@ -13,7 +13,7 @@ vet:
 	go vet ./...
 
 fmt:
-	gofmt -w cmd config db
+	gofmt -w cmd config db internal
 
 docker-build:
 	docker build -t social-api .

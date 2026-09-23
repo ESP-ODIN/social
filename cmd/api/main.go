@@ -18,6 +18,7 @@ import (
 	"social/internal/router"
 	serviceimpl "social/internal/service/implementation"
 
+	"github.com/ESP-ODIN/authkit-go"
 	"github.com/joho/godotenv"
 )
 
@@ -34,6 +35,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	authenticator, err := authkit.New(authkit.Config{JWKSURL: cfg.AuthJWKSURL, Issuer: cfg.AuthIssuer, Audience: cfg.AuthAudience})
+	if err != nil {
+		return fmt.Errorf("initialize authentication: %w", err)
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
@@ -46,7 +51,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           router.New(pool, serviceimpl.NewPostService(repositoryimpl.NewPostRepository(pool)), cfg.JWTSecretKey),
+		Handler:           router.New(pool, serviceimpl.NewPostService(repositoryimpl.NewPostRepository(pool)), authenticator),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
