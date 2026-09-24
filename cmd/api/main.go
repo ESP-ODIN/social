@@ -21,6 +21,15 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// @title						Social API
+// @version					1.0
+// @description				Social networking component of the ODIN application.
+// @BasePath					/
+//
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+// @description				JWT issued by Auth, sent as "Bearer <token>".
 func main() {
 	godotenv.Load()
 	if err := run(); err != nil {
