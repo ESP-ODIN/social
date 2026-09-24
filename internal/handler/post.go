@@ -12,6 +12,22 @@ import (
 	"social/internal/service"
 )
 
+// CreatePost godoc
+//
+//	@Summary		Create a post
+//	@Description	Creates a post authored by the user identified by the JWT `id` claim.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			post	body		dto.CreatePostRequest	true	"Post to create"
+//	@Success		201		{object}	model.Post
+//	@Header			201		{string}	Location	"URL of the created post"
+//	@Failure		400		{object}	dto.ErrorResponse
+//	@Failure		401		{string}	string	"unauthorized"
+//	@Failure		413		{object}	dto.ErrorResponse
+//	@Failure		500		{object}	dto.ErrorResponse
+//	@Router			/api/v1/posts [post]
 func CreatePost(posts service.PostService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authorID, ok := middleware.UserIDFromContext(r.Context())
@@ -62,5 +78,5 @@ func CreatePost(posts service.PostService) http.HandlerFunc {
 func writePostError(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": message})
+	_ = json.NewEncoder(w).Encode(dto.ErrorResponse{Error: message})
 }
