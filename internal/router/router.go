@@ -12,5 +12,6 @@ func New(db handler.Pinger, posts service.PostService, jwtSecretKey string) http
 	mux.HandleFunc("GET /health", handler.Health)
 	mux.HandleFunc("GET /ready", handler.Ready(db))
 	registerPostRoutes(mux, posts, jwtSecretKey)
+	registerSwaggerRoutes(mux)
 	return mux
 }

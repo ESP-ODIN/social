@@ -1,0 +1,136 @@
+basePath: /
+definitions:
+  dto.CreatePostRequest:
+    properties:
+      content:
+        example: Hello
+        type: string
+      media_url:
+        example: https://example.com/image.jpg
+        maxLength: 255
+        type: string
+    required:
+    - content
+    type: object
+  dto.ErrorResponse:
+    properties:
+      error:
+        example: invalid JSON body
+        type: string
+    type: object
+  dto.StatusResponse:
+    properties:
+      status:
+        example: ok
+        type: string
+    type: object
+  model.Post:
+    properties:
+      author_id:
+        example: 7e733b0f-136e-4cd9-923d-19c733cd466a
+        format: uuid
+        type: string
+      content:
+        example: Hello
+        type: string
+      created_at:
+        format: date-time
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        format: uuid
+        type: string
+      media_url:
+        example: https://example.com/image.jpg
+        type: string
+      updated_at:
+        format: date-time
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Social networking component of the ODIN application.
+  title: Social API
+  version: "1.0"
+paths:
+  /api/v1/posts:
+    post:
+      consumes:
+      - application/json
+      description: Creates a post authored by the user identified by the JWT `id`
+        claim.
+      parameters:
+      - description: Post to create
+        in: body
+        name: post
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          headers:
+            Location:
+              description: URL of the created post
+              type: string
+          schema:
+            $ref: '#/definitions/model.Post'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "413":
+          description: Request Entity Too Large
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a post
+      tags:
+      - posts
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.StatusResponse'
+      summary: Liveness check
+      tags:
+      - health
+  /ready:
+    get:
+      description: Pings the database on every request.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.StatusResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/dto.StatusResponse'
+      summary: Readiness check
+      tags:
+      - health
+securityDefinitions:
+  BearerAuth:
+    description: JWT issued by Auth, sent as "Bearer <token>".
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
