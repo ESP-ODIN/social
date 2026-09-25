@@ -8,15 +8,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
 	"social/internal/dto"
-	"social/internal/middleware"
 	"social/internal/model"
 	"social/internal/service"
+	"social/internal/testutil"
 )
 
 type fakePostService struct {
@@ -34,14 +32,8 @@ func (s *fakePostService) Create(_ context.Context, authorID uuid.UUID, _ dto.Cr
 
 func TestCreatePost(t *testing.T) {
 	const id = "550e8400-e29b-41d4-a716-446655440000"
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, middleware.Claims{
-		ID:               uuid.MustParse(id),
-		Email:            "test@example.com",
-		RegisteredClaims: jwt.RegisteredClaims{ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour))},
-	}).SignedString([]byte("test-secret"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	a := testutil.NewAuth(t)
+	token := a.Token(t, a.Claims(uuid.MustParse(id)))
 	for _, tc := range []struct {
 		name, body string
 		service    fakePostService
@@ -60,7 +52,7 @@ func TestCreatePost(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", strings.NewReader(tc.body))
 			req.Header.Set("Authorization", "Bearer "+token)
 			svc := tc.service
-			middleware.Auth("test-secret")(CreatePost(&svc)).ServeHTTP(rec, req)
+			a.Authenticator.RequireAuth(CreatePost(&svc)).ServeHTTP(rec, req)
 			if rec.Code != tc.status {
 				t.Fatalf("status = %d, want %d; body = %s", rec.Code, tc.status, rec.Body)
 			}
@@ -80,5 +72,14 @@ func TestCreatePost(t *testing.T) {
 				t.Fatal("service called with client-supplied author_id")
 			}
 		})
+	}
+}
+
+func TestCreatePostMissingIdentity(t *testing.T) {
+	svc := &fakePostService{}
+	rec := httptest.NewRecorder()
+	CreatePost(svc).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/posts", strings.NewReader("{")))
+	if rec.Code != http.StatusUnauthorized || svc.called {
+		t.Fatalf("status = %d, called = %v", rec.Code, svc.called)
 	}
 }

@@ -5,12 +5,15 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
 	HTTPAddr     string
 	DatabaseURL  string
-	JWTSecretKey string
+	AuthJWKSURL  string
+	AuthIssuer   string
+	AuthAudience string
 }
 
 func Load() (Config, error) {
@@ -31,10 +34,13 @@ func Load() (Config, error) {
 	if dbURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
 	}
-	secret := os.Getenv("JWT_SECRET_KEY")
-	if secret == "" {
-		return Config{}, fmt.Errorf("JWT_SECRET_KEY is required")
+	cfg := Config{HTTPAddr: addr, DatabaseURL: dbURL, AuthJWKSURL: os.Getenv("AUTH_JWKS_URL"), AuthIssuer: os.Getenv("AUTH_ISSUER"), AuthAudience: os.Getenv("AUTH_AUDIENCE")}
+	for _, entry := range []struct{ name, value string }{
+		{"AUTH_JWKS_URL", cfg.AuthJWKSURL}, {"AUTH_ISSUER", cfg.AuthIssuer}, {"AUTH_AUDIENCE", cfg.AuthAudience},
+	} {
+		if strings.TrimSpace(entry.value) == "" {
+			return Config{}, fmt.Errorf("%s is required", entry.name)
+		}
 	}
-
-	return Config{HTTPAddr: addr, DatabaseURL: dbURL, JWTSecretKey: secret}, nil
+	return cfg, nil
 }

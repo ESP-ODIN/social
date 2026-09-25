@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/ESP-ODIN/authkit-go"
 	"social/internal/dto"
-	"social/internal/middleware"
 	"social/internal/service"
 )
 
@@ -30,7 +30,7 @@ import (
 //	@Router			/api/v1/posts [post]
 func CreatePost(posts service.PostService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		authorID, ok := middleware.UserIDFromContext(r.Context())
+		identity, ok := authkit.IdentityFromContext(r.Context())
 		if !ok {
 			writePostError(w, http.StatusUnauthorized, "unauthorized")
 			return
@@ -58,7 +58,7 @@ func CreatePost(posts service.PostService) http.HandlerFunc {
 			return
 		}
 
-		post, err := posts.Create(r.Context(), authorID, req)
+		post, err := posts.Create(r.Context(), identity.ID, req)
 		if errors.Is(err, service.ErrInvalidPost) {
 			writePostError(w, http.StatusBadRequest, err.Error())
 			return

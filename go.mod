@@ -3,6 +3,7 @@ module social
 go 1.27.0
 
 require (
+	github.com/ESP-ODIN/authkit-go v0.0.0-20260923092100-98c6c2e7ff71
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.11.0

@@ -13,7 +13,7 @@ vet:
 	go vet ./...
 
 fmt:
-	gofmt -w cmd config db
+	gofmt -w cmd config db internal
 
 # Régénère la spec OpenAPI dans docs/ à partir des annotations swag des handlers.
 swagger:
