@@ -1,4 +1,4 @@
-.PHONY: run build test vet fmt docker-build docker-dev
+.PHONY: run build test vet fmt swagger docker-build docker-dev
 
 run:
 	go run ./cmd/api
@@ -14,6 +14,10 @@ vet:
 
 fmt:
 	gofmt -w cmd config db internal
+
+# Régénère la spec OpenAPI dans docs/ à partir des annotations swag des handlers.
+swagger:
+	go tool swag init -g cmd/api/main.go -o docs --parseInternal
 
 docker-build:
 	docker build -t social-api .

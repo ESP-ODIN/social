@@ -101,6 +101,28 @@ func TestPostRouteUsesJWTAuthor(t *testing.T) {
 	}
 }
 
+func TestSwaggerRoutes(t *testing.T) {
+	handler := New(fakePinger{}, nil, "test-secret")
+	for _, path := range []string{"/swagger/index.html", "/swagger/doc.json"} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: status = %d, want 200", path, rec.Code)
+		}
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/swagger/doc.json", nil))
+	var spec struct {
+		Paths map[string]json.RawMessage `json:"paths"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &spec); err != nil {
+		t.Fatalf("invalid spec: %v", err)
+	}
+	for _, path := range []string{"/health", "/ready", "/api/v1/posts"} {
+		if _, ok := spec.Paths[path]; !ok {
+			t.Fatalf("spec is missing %s; regenerate it with `go tool swag init -g cmd/api/main.go -o docs --parseInternal`", path)
+		}
 func TestPostAuthenticationFailures(t *testing.T) {
 	a := testutil.NewAuth(t)
 	id := uuid.New()
