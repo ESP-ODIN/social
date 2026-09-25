@@ -1,3 +1,5 @@
+github.com/ESP-ODIN/authkit-go v0.0.0-20260923092100-98c6c2e7ff71 h1:fQCeSUL7X6OmGCa3JGQxYHJHHyurpjYcMCWTvTwTPc4=
+github.com/ESP-ODIN/authkit-go v0.0.0-20260923092100-98c6c2e7ff71/go.mod h1:f+7ZBM7PyZvJpBFMV3CUBEUL68OiZVIBJxaTQl9s9EM=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

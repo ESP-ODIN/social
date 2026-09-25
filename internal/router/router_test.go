@@ -14,8 +14,9 @@ import (
 	"github.com/google/uuid"
 
 	"social/internal/dto"
-	"social/internal/middleware"
 	"social/internal/model"
+	serviceimpl "social/internal/service/implementation"
+	"social/internal/testutil"
 )
 
 type fakePinger struct{ err error }
@@ -36,6 +37,7 @@ func (s *recordingPostService) Create(_ context.Context, authorID uuid.UUID, req
 }
 
 func TestRoutes(t *testing.T) {
+	a := testutil.NewAuth(t)
 	for _, tc := range []struct {
 		name, method, path string
 		pingErr            error
@@ -51,7 +53,7 @@ func TestRoutes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			New(fakePinger{err: tc.pingErr}, nil, "test-secret").ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+			New(fakePinger{err: tc.pingErr}, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
 			if rec.Code != tc.status {
 				t.Fatalf("status = %d, want %d", rec.Code, tc.status)
 			}
@@ -72,8 +74,9 @@ func TestRoutes(t *testing.T) {
 }
 
 func TestPostRequiresAuthentication(t *testing.T) {
+	a := testutil.NewAuth(t)
 	rec := httptest.NewRecorder()
-	New(fakePinger{}, nil, "test-secret").ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/posts", nil))
+	New(fakePinger{}, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/posts", nil))
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401", rec.Code)
 	}
@@ -81,26 +84,96 @@ func TestPostRequiresAuthentication(t *testing.T) {
 
 func TestPostRouteUsesJWTAuthor(t *testing.T) {
 	authorID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, middleware.Claims{
-		ID:    authorID,
-		Email: "test@example.com",
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-		},
-	}).SignedString([]byte("test-secret"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	a := testutil.NewAuth(t)
+	token := a.Token(t, a.Claims(authorID))
 
 	posts := &recordingPostService{}
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", strings.NewReader(`{"content":"hello"}`))
 	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
-	New(fakePinger{}, posts, "test-secret").ServeHTTP(rec, req)
+	routes := New(fakePinger{}, posts, a.Authenticator)
+	routes.ServeHTTP(rec, req)
 	if rec.Code != http.StatusCreated || !posts.called || posts.authorID != authorID || posts.request.Content != "hello" {
 		t.Fatalf("status = %d, called = %v, author = %s, request = %+v", rec.Code, posts.called, posts.authorID, posts.request)
 	}
 	if got := rec.Header().Get("Location"); got != "/api/v1/posts/post-id" {
 		t.Fatalf("Location = %q", got)
+	}
+}
+
+func TestPostAuthenticationFailures(t *testing.T) {
+	a := testutil.NewAuth(t)
+	id := uuid.New()
+	expired := a.Claims(id)
+	expired.ExpiresAt = jwt.NewNumericDate(time.Now().Add(-time.Hour))
+	noExpiry := a.Claims(id)
+	noExpiry.ExpiresAt = nil
+	issuer := a.Claims(id)
+	issuer.Issuer = "wrong"
+	audience := a.Claims(id)
+	audience.Audience = jwt.ClaimStrings{"wrong"}
+	wrongSigner := testutil.NewAuth(t)
+	hs, err := jwt.NewWithClaims(jwt.SigningMethodHS256, a.Claims(id)).SignedString([]byte("obsolete-secret"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct{ name, header string }{
+		{"missing", ""}, {"malformed", "Basic abc"}, {"empty bearer", "Bearer "}, {"invalid", "Bearer invalid"},
+		{"expired", "Bearer " + a.Token(t, expired)}, {"missing expiration", "Bearer " + a.Token(t, noExpiry)},
+		{"wrong issuer", "Bearer " + a.Token(t, issuer)}, {"wrong audience", "Bearer " + a.Token(t, audience)},
+		{"wrong signature", "Bearer " + wrongSigner.Token(t, a.Claims(id))},
+		{"missing id", "Bearer " + a.Token(t, a.Claims(uuid.Nil))}, {"old HS256", "Bearer " + hs},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			posts := &recordingPostService{}
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", strings.NewReader("{}"))
+			if tc.header != "" {
+				req.Header.Set("Authorization", tc.header)
+			}
+			rec := httptest.NewRecorder()
+			New(fakePinger{}, posts, a.Authenticator).ServeHTTP(rec, req)
+			if rec.Code != http.StatusUnauthorized || posts.called {
+				t.Fatalf("status = %d, called = %v", rec.Code, posts.called)
+			}
+			if rec.Body.String() != "Unauthorized\n" {
+				t.Fatalf("unexpected authentication response: %q", rec.Body.String())
+			}
+		})
+	}
+}
+
+type recordingRepository struct{ posts []model.Post }
+
+func (r *recordingRepository) Create(_ context.Context, post model.Post) (model.Post, error) {
+	r.posts = append(r.posts, post)
+	post.ID = uuid.NewString()
+	return post, nil
+}
+
+func TestAuthenticatedCreationPersistsIdentityAndReusesJWKS(t *testing.T) {
+	a := testutil.NewAuth(t)
+	repo := &recordingRepository{}
+	routes := New(fakePinger{}, serviceimpl.NewPostService(repo), a.Authenticator)
+	for i := 0; i < 2; i++ {
+		id := uuid.New()
+		claims := a.Claims(id)
+		claims.Email = ""
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", strings.NewReader("{\"content\":\" hello \"}"))
+		req.Header.Set("Authorization", "Bearer "+a.Token(t, claims))
+		rec := httptest.NewRecorder()
+		routes.ServeHTTP(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("status = %d: %s", rec.Code, rec.Body)
+		}
+		var post model.Post
+		if err := json.Unmarshal(rec.Body.Bytes(), &post); err != nil {
+			t.Fatal(err)
+		}
+		if len(repo.posts) != i+1 || repo.posts[i].AuthorID != id.String() || post.AuthorID != id.String() || post.Content != "hello" {
+			t.Fatalf("identity not persisted: %+v", post)
+		}
+	}
+	if got := a.Fetches.Load(); got != 1 {
+		t.Fatalf("JWKS requests = %d, want 1", got)
 	}
 }
