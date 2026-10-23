@@ -2,27 +2,15 @@
 
 The social networking component of ODIN. Requires Go 1.27.0 or later.
 
-## Authentication and local dependency
+## Authentication
 
 Auth alone signs RS256 JWTs. Social uses
 [authkit-go](https://github.com/ESP-ODIN/authkit-go) to validate them through
 Auth's public JWKS, including issuer, audience, expiry and issued-at.
 Social has no private key or shared JWT secret.
 
-The inspected GitHub commit `fb87d0a2296b` currently contains only a README,
-with no Go package. Development therefore uses the existing sibling checkout:
-
-```go
-require github.com/ESP-ODIN/authkit-go v0.0.0-20260922093749-fb87d0a2296b
-replace github.com/ESP-ODIN/authkit-go => ../authkit-go
-```
-
-Here that path resolves to `C:\Users\benis\IdeaProjects\authkit-go`.
-Keep the repositories side by side. No library code is copied into Social.
-The pseudo-version identifies the existing GitHub commit; no tag or release
-was created. Once the Go package is available on GitHub, remove the replacement,
-select the available commit with Go, and run `go mod tidy`.
-Until then, a Social-only checkout/CI job needs the sibling library checkout.
+Social depends directly on `github.com/ESP-ODIN/authkit-go` at the version pinned
+in `go.mod`. No sibling checkout or local replacement is required.
 
 One authenticator is initialized at startup and shared across requests so its
 JWKS cache is reused. Only `POST /api/v1/posts` is protected.
@@ -145,14 +133,6 @@ Inside Docker, localhost refers to the Social container, not Auth on the host.
 Set AUTH_JWKS_URL to the address actually reachable in your Docker setup.
 AUTH_ISSUER must still match the token's issuer exactly, even if the JWKS
 transport address differs. No Auth service hostname is assumed here.
-
-The temporary ../authkit-go replacement is outside the Dockerfile's Social-only
-build context and is not included by the current runtime bind mount. Therefore
-the current `make docker-build` / `make docker-dev` flow cannot use this local
-replacement as-is. Prefer running both services directly during this stage.
-Restore the ordinary GitHub dependency once its Go code is available before
-using the existing Docker flow, or explicitly arrange a context/mount containing
-both repositories in your infrastructure. No new compose infrastructure is added.
 
 ## Structure
 
