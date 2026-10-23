@@ -14,6 +14,7 @@ func New(db handler.Pinger, posts service.PostService, authenticator *authkit.Au
 	mux.HandleFunc("GET /ready", handler.Ready(db))
 	registerPostRoutes(mux, posts, authenticator)
 	registerGetPostRoutes(mux, posts, authenticator)
+	registerDeletePostRoutes(mux, posts, authenticator)
 	registerSwaggerRoutes(mux)
 	return mux
 }

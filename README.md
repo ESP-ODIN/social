@@ -13,7 +13,8 @@ Social depends directly on `github.com/ESP-ODIN/authkit-go` at the version pinne
 in `go.mod`. No sibling checkout or local replacement is required.
 
 One authenticator is initialized at startup and shared across requests so its
-JWKS cache is reused. `POST /api/v1/posts` and `GET /api/v1/posts/{id}` are protected.
+JWKS cache is reused. `POST /api/v1/posts`, `GET /api/v1/posts/{id}` and
+`DELETE /api/v1/posts/{id}` are protected.
 
 Client -> Authorization: Bearer JWT -> authkit-go RequireAuth -> RS256/JWKS validation
 -> Identity.ID -> Post Handler -> Post Service -> Post Repository -> post.author_id.
@@ -105,6 +106,21 @@ Invoke-RestMethod -Method Get -Uri "http://localhost:8081/api/v1/posts/$($post.i
 `GET /api/v1/posts/{id}` returns 200 with the same post fields as creation.
 An invalid or zero UUID returns 400, missing or invalid authentication returns 401,
 an unknown post returns 404, and an unexpected storage error returns a generic 500.
+
+## Delete a post
+
+`DELETE /api/v1/posts/{id}` permanently deletes a publication. Only its author,
+identified by the JWT `id` claim through `authkit-go`, can delete it. No request
+body is needed. With `make docker-dev`, use port 8090:
+
+```powershell
+Invoke-RestMethod -Method Delete -Uri "http://localhost:8090/api/v1/posts/$($post.id)" -Headers @{ Authorization = "Bearer $token" }
+```
+
+Success returns 204 with no body. Invalid or zero UUIDs return 400, missing or
+invalid authentication returns 401, another author receives 403, and missing
+posts return 404. Unexpected storage errors return a generic 500. Reading or
+deleting the same post again returns 404.
 
 ## API documentation (Swagger)
 

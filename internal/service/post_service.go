@@ -17,4 +17,5 @@ var ErrPostNotFound = errors.New("post not found")
 type PostService interface {
 	Create(context.Context, uuid.UUID, dto.CreatePostRequest) (model.Post, error)
 	GetByID(context.Context, string) (model.Post, error)
+	Delete(context.Context, string, uuid.UUID) error
 }
