@@ -13,7 +13,7 @@ Social depends directly on `github.com/ESP-ODIN/authkit-go` at the version pinne
 in `go.mod`. No sibling checkout or local replacement is required.
 
 One authenticator is initialized at startup and shared across requests so its
-JWKS cache is reused. Only `POST /api/v1/posts` is protected.
+JWKS cache is reused. `POST /api/v1/posts` and `GET /api/v1/posts/{id}` are protected.
 
 Client -> Authorization: Bearer JWT -> authkit-go RequireAuth -> RS256/JWKS validation
 -> Identity.ID -> Post Handler -> Post Service -> Post Repository -> post.author_id.
@@ -93,6 +93,18 @@ Content cannot be blank. Unknown fields, including `author_id`, are rejected.
 Invalid JSON or business data returns 400; the existing 1 MiB body limit returns
 413. Missing or invalid authentication returns a generic 401; unexpected
 repository errors return a generic 500 without SQL details.
+
+## Read a post
+
+Any authenticated user can read a post by its UUID, including posts by other authors:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri "http://localhost:8081/api/v1/posts/$($post.id)" -Headers @{ Authorization = "Bearer $token" }
+```
+
+`GET /api/v1/posts/{id}` returns 200 with the same post fields as creation.
+An invalid or zero UUID returns 400, missing or invalid authentication returns 401,
+an unknown post returns 404, and an unexpected storage error returns a generic 500.
 
 ## API documentation (Swagger)
 

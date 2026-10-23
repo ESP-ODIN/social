@@ -120,7 +120,7 @@ func TestSwaggerRoutes(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &spec); err != nil {
 		t.Fatalf("invalid spec: %v", err)
 	}
-	for _, path := range []string{"/health", "/ready", "/api/v1/posts"} {
+	for _, path := range []string{"/health", "/ready", "/api/v1/posts", "/api/v1/posts/{id}"} {
 		if _, ok := spec.Paths[path]; !ok {
 			t.Fatalf("spec is missing %s; regenerate it with `go tool swag init -g cmd/api/main.go -o docs --parseInternal`", path)
 		}
