@@ -1,0 +1,17 @@
+#!/bin/sh
+# Bloque le push si go vet ou un test unitaire échoue.
+# Activation (une seule fois par clone) : make hooks
+
+echo "pre-push: go vet + tests unitaires..."
+
+if ! go vet ./...; then
+	echo "pre-push: go vet a échoué, push annulé."
+	exit 1
+fi
+
+if ! go test -race -count=1 ./...; then
+	echo "pre-push: des tests ont échoué, push annulé."
+	exit 1
+fi
+
+echo "pre-push: tous les tests passent."

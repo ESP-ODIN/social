@@ -1,4 +1,4 @@
-.PHONY: run build test vet fmt swagger docker-build docker-dev
+.PHONY: run build test vet fmt swagger docker-build docker-dev hooks
 
 run:
 	go run ./cmd/api
@@ -31,3 +31,7 @@ docker-dev:
 		-v "$(CURDIR)":/app \
 		-v /app/tmp \
 		social-api
+
+# Active les hooks git du repo (lance les tests avant chaque push).
+hooks:
+	git config core.hooksPath .githooks
