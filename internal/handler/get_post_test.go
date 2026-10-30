@@ -57,7 +57,7 @@ func TestGetPost(t *testing.T) {
 func TestGetPostMissingIdentity(t *testing.T) {
 	svc := &fakeGetPostService{}
 	rec := httptest.NewRecorder()
-	GetPost(svc).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/posts/id", nil))
+	testutil.NewAuth(t).Authenticator.RequireAuth(GetPost(svc)).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/posts/id", nil))
 	if rec.Code != http.StatusUnauthorized || svc.called {
 		t.Fatalf("status=%d, called=%v", rec.Code, svc.called)
 	}

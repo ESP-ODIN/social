@@ -111,10 +111,10 @@ an unknown post returns 404, and an unexpected storage error returns a generic 5
 
 `DELETE /api/v1/posts/{id}` permanently deletes a publication. Only its author,
 identified by the JWT `id` claim through `authkit-go`, can delete it. No request
-body is needed. With `make docker-dev`, use port 8090:
+body is needed. As in the GET example, Social runs on port 8081 (use 8090 with `make docker-dev`):
 
 ```powershell
-Invoke-RestMethod -Method Delete -Uri "http://localhost:8090/api/v1/posts/$($post.id)" -Headers @{ Authorization = "Bearer $token" }
+Invoke-RestMethod -Method Delete -Uri "http://localhost:8081/api/v1/posts/$($post.id)" -Headers @{ Authorization = "Bearer $token" }
 ```
 
 Success returns 204 with no body. Invalid or zero UUIDs return 400, missing or

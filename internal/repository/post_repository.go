@@ -2,12 +2,11 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"social/internal/model"
 )
 
-var ErrPostNotFound = errors.New("post not found")
+var ErrPostNotFound = model.ErrPostNotFound
 
 type PostRepository interface {
 	Create(context.Context, model.Post) (model.Post, error)

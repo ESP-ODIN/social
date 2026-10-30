@@ -3,9 +3,9 @@ package handler
 import (
 	"encoding/json"
 	"errors"
-	"github.com/ESP-ODIN/authkit-go"
 	"log/slog"
 	"net/http"
+
 	"social/internal/service"
 )
 
@@ -25,10 +25,6 @@ import (
 //	@Router /api/v1/posts/{id} [get]
 func GetPost(posts service.PostService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := authkit.IdentityFromContext(r.Context()); !ok {
-			writePostError(w, http.StatusUnauthorized, "unauthorized")
-			return
-		}
 		post, err := posts.GetByID(r.Context(), r.PathValue("id"))
 		switch {
 		case errors.Is(err, service.ErrInvalidPostID):
@@ -40,7 +36,9 @@ func GetPost(posts service.PostService) http.HandlerFunc {
 			writePostError(w, http.StatusInternalServerError, "could not get post")
 		default:
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(post)
+			if err := json.NewEncoder(w).Encode(post); err != nil {
+				slog.Error("write get post response failed", "error", err)
+			}
 		}
 	}
 }

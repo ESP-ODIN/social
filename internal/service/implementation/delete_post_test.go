@@ -43,15 +43,16 @@ func TestDeletePost(t *testing.T) {
 		getErr, deleteErr, want error
 		read, deleted           bool
 	}{
-		{"deleted", id, authorID, nil, nil, nil, true, true},
+		{"deleted", id, authorID, nil, nil, nil, false, true},
 		{"invalid id", "bad-id", authorID, nil, nil, service.ErrInvalidPostID, false, false},
+		{"invalid id and missing identity", "bad-id", uuid.Nil, nil, nil, service.ErrInvalidPostID, false, false},
 		{"zero id", uuid.Nil.String(), authorID, nil, nil, service.ErrInvalidPostID, false, false},
-		{"missing identity", id, uuid.Nil, nil, nil, service.ErrPostForbidden, false, false},
-		{"other author", id, uuid.New(), nil, nil, service.ErrPostForbidden, true, false},
-		{"missing post", id, authorID, repository.ErrPostNotFound, nil, service.ErrPostNotFound, true, false},
-		{"read failure", id, authorID, storageErr, nil, storageErr, true, false},
-		{"delete failure", id, authorID, nil, storageErr, storageErr, true, true},
-		{"already deleted", id, authorID, nil, fmt.Errorf("delete: %w", repository.ErrPostNotFound), service.ErrPostNotFound, true, true},
+		{"missing identity", id, uuid.Nil, nil, nil, service.ErrPostUnauthorized, false, false},
+		{"other author", id, uuid.New(), nil, repository.ErrPostNotFound, service.ErrPostForbidden, true, true},
+		{"missing post", id, authorID, repository.ErrPostNotFound, repository.ErrPostNotFound, service.ErrPostNotFound, true, true},
+		{"read failure", id, authorID, storageErr, repository.ErrPostNotFound, storageErr, true, true},
+		{"delete failure", id, authorID, nil, storageErr, storageErr, false, true},
+		{"already deleted", id, authorID, repository.ErrPostNotFound, fmt.Errorf("delete: %w", repository.ErrPostNotFound), service.ErrPostNotFound, true, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := &fakeDeletePostRepository{post: model.Post{ID: id, AuthorID: authorID.String()}, getErr: tc.getErr, deleteErr: tc.deleteErr}
@@ -59,7 +60,7 @@ func TestDeletePost(t *testing.T) {
 			if !errors.Is(err, tc.want) || repo.read != tc.read || repo.deleted != tc.deleted {
 				t.Fatalf("err=%v, repo=%+v", err, repo)
 			}
-			if tc.deleted && (repo.id != id || repo.authorID != authorID.String()) {
+			if tc.deleted && (repo.id != id || repo.authorID != tc.actor.String()) {
 				t.Fatalf("unexpected delete arguments: %+v", repo)
 			}
 		})

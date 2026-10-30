@@ -3,7 +3,9 @@ package implementation
 import (
 	"context"
 	"errors"
+
 	"github.com/jackc/pgx/v5"
+
 	"social/internal/model"
 	"social/internal/repository"
 )

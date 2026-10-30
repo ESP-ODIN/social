@@ -5,25 +5,24 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"social/internal/repository"
 	"social/internal/service"
 )
 
 func (s *postService) Delete(ctx context.Context, id string, authorID uuid.UUID) error {
+	parsed, err := uuid.Parse(id)
+	if err != nil || parsed == uuid.Nil {
+		return service.ErrInvalidPostID
+	}
 	if authorID == uuid.Nil {
+		return service.ErrPostUnauthorized
+	}
+	err = s.repo.Delete(ctx, parsed.String(), authorID.String())
+	if errors.Is(err, service.ErrPostNotFound) {
+		// Only diagnose a failed deletion; the database enforces ownership atomically.
+		if _, err := s.repo.GetByID(ctx, parsed.String()); err != nil {
+			return err
+		}
 		return service.ErrPostForbidden
-	}
-	post, err := s.GetByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	if post.AuthorID != authorID.String() {
-		return service.ErrPostForbidden
-	}
-	// Include the author in the DELETE predicate as well as the permission check.
-	err = s.repo.Delete(ctx, post.ID, authorID.String())
-	if errors.Is(err, repository.ErrPostNotFound) {
-		return service.ErrPostNotFound
 	}
 	return err
 }

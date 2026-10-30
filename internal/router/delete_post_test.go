@@ -39,11 +39,14 @@ func TestDeletePostRoute(t *testing.T) {
 	a := testutil.NewAuth(t)
 	authorID, id := uuid.New(), uuid.NewString()
 	ownerToken := a.Token(t, a.Claims(authorID))
+	emptyToken := a.Token(t, a.Claims(uuid.Nil))
 	otherToken := a.Token(t, a.Claims(uuid.New()))
 	for _, tc := range []struct {
 		name, id, token string
 		status          int
 	}{
+		{"empty user", id, emptyToken, 401},
+		{"invalid id and empty user", "bad-id", emptyToken, 401},
 		{"owner", id, ownerToken, 204},
 		{"other user", id, otherToken, 403},
 		{"missing token", id, "", 401},

@@ -28,11 +28,13 @@ func DeletePost(posts service.PostService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		identity, ok := authkit.IdentityFromContext(r.Context())
 		if !ok {
-			writePostError(w, http.StatusUnauthorized, "unauthorized")
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 		err := posts.Delete(r.Context(), r.PathValue("id"), identity.ID)
 		switch {
+		case errors.Is(err, service.ErrPostUnauthorized):
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		case errors.Is(err, service.ErrInvalidPostID):
 			writePostError(w, http.StatusBadRequest, service.ErrInvalidPostID.Error())
 		case errors.Is(err, service.ErrPostForbidden):

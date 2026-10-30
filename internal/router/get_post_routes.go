@@ -1,8 +1,10 @@
 package router
 
 import (
-	"github.com/ESP-ODIN/authkit-go"
 	"net/http"
+
+	"github.com/ESP-ODIN/authkit-go"
+
 	"social/internal/handler"
 	"social/internal/service"
 )
