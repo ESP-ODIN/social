@@ -2,30 +2,19 @@
 
 The social networking component of ODIN. Requires Go 1.27.0 or later.
 
-## Authentication and local dependency
+## Authentication
 
 Auth alone signs RS256 JWTs. Social uses
 [authkit-go](https://github.com/ESP-ODIN/authkit-go) to validate them through
 Auth's public JWKS, including issuer, audience, expiry and issued-at.
 Social has no private key or shared JWT secret.
 
-The inspected GitHub commit `fb87d0a2296b` currently contains only a README,
-with no Go package. Development therefore uses the existing sibling checkout:
-
-```go
-require github.com/ESP-ODIN/authkit-go v0.0.0-20260922093749-fb87d0a2296b
-replace github.com/ESP-ODIN/authkit-go => ../authkit-go
-```
-
-Here that path resolves to `C:\Users\benis\IdeaProjects\authkit-go`.
-Keep the repositories side by side. No library code is copied into Social.
-The pseudo-version identifies the existing GitHub commit; no tag or release
-was created. Once the Go package is available on GitHub, remove the replacement,
-select the available commit with Go, and run `go mod tidy`.
-Until then, a Social-only checkout/CI job needs the sibling library checkout.
+Social depends directly on `github.com/ESP-ODIN/authkit-go` at the version pinned
+in `go.mod`. No sibling checkout or local replacement is required.
 
 One authenticator is initialized at startup and shared across requests so its
-JWKS cache is reused. Only `POST /api/v1/posts` is protected.
+JWKS cache is reused. `POST /api/v1/posts`, `GET /api/v1/posts/{id}` and
+`DELETE /api/v1/posts/{id}` are protected.
 
 Client -> Authorization: Bearer JWT -> authkit-go RequireAuth -> RS256/JWKS validation
 -> Identity.ID -> Post Handler -> Post Service -> Post Repository -> post.author_id.
@@ -106,6 +95,33 @@ Invalid JSON or business data returns 400; the existing 1 MiB body limit returns
 413. Missing or invalid authentication returns a generic 401; unexpected
 repository errors return a generic 500 without SQL details.
 
+## Read a post
+
+Any authenticated user can read a post by its UUID, including posts by other authors:
+
+```powershell
+Invoke-RestMethod -Method Get -Uri "http://localhost:8081/api/v1/posts/$($post.id)" -Headers @{ Authorization = "Bearer $token" }
+```
+
+`GET /api/v1/posts/{id}` returns 200 with the same post fields as creation.
+An invalid or zero UUID returns 400, missing or invalid authentication returns 401,
+an unknown post returns 404, and an unexpected storage error returns a generic 500.
+
+## Delete a post
+
+`DELETE /api/v1/posts/{id}` permanently deletes a publication. Only its author,
+identified by the JWT `id` claim through `authkit-go`, can delete it. No request
+body is needed. As in the GET example, Social runs on port 8081 (use 8090 with `make docker-dev`):
+
+```powershell
+Invoke-RestMethod -Method Delete -Uri "http://localhost:8081/api/v1/posts/$($post.id)" -Headers @{ Authorization = "Bearer $token" }
+```
+
+Success returns 204 with no body. Invalid or zero UUIDs return 400, missing or
+invalid authentication returns 401, another author receives 403, and missing
+posts return 404. Unexpected storage errors return a generic 500. Reading or
+deleting the same post again returns 404.
+
 ## API documentation (Swagger)
 
 The Swagger UI is served at `http://127.0.0.1:8080/swagger/index.html` (port `8090` with
@@ -145,14 +161,6 @@ Inside Docker, localhost refers to the Social container, not Auth on the host.
 Set AUTH_JWKS_URL to the address actually reachable in your Docker setup.
 AUTH_ISSUER must still match the token's issuer exactly, even if the JWKS
 transport address differs. No Auth service hostname is assumed here.
-
-The temporary ../authkit-go replacement is outside the Dockerfile's Social-only
-build context and is not included by the current runtime bind mount. Therefore
-the current `make docker-build` / `make docker-dev` flow cannot use this local
-replacement as-is. Prefer running both services directly during this stage.
-Restore the ordinary GitHub dependency once its Go code is available before
-using the existing Docker flow, or explicitly arrange a context/mount containing
-both repositories in your infrastructure. No new compose infrastructure is added.
 
 ## Structure
 

@@ -11,7 +11,13 @@ import (
 )
 
 var ErrInvalidPost = errors.New("author_id must not be empty, content must not be empty, and media_url must be at most 255 characters")
+var ErrInvalidPostID = errors.New("post id must be a non-zero UUID")
+var ErrPostNotFound = model.ErrPostNotFound
+var ErrPostForbidden = errors.New("only the author can delete this post")
+var ErrPostUnauthorized = errors.New("unauthorized")
 
 type PostService interface {
 	Create(context.Context, uuid.UUID, dto.CreatePostRequest) (model.Post, error)
+	GetByID(context.Context, string) (model.Post, error)
+	Delete(context.Context, string, uuid.UUID) error
 }
