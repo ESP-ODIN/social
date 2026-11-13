@@ -175,6 +175,42 @@ paths:
       summary: Get a post
       tags:
       - posts
+  /api/v1/users/{userId}/posts:
+    get:
+      description: Returns all posts authored by the given user, newest first.
+      parameters:
+      - description: User ID
+        format: uuid
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Post'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get posts by user
+      tags:
+      - posts
   /health:
     get:
       produces:
