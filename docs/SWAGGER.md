@@ -23,11 +23,12 @@ The raw spec is at `/swagger/doc.json`. The Swagger routes are public, like `/he
 
 ## Call protected routes
 
-Routes marked with a padlock (for example `POST /api/v1/posts`) require a JWT signed by Auth with
-the same `JWT_SECRET_KEY` as this API. The token must use HS256 and contain an `exp` claim and
-an `id` claim (the user UUID).
+Routes marked with a padlock (for example `POST /api/v1/posts`) require a JWT signed by Auth
+using RS256. Social uses `authkit-go` to validate the token through Auth's public JWKS,
+configured with `AUTH_JWKS_URL`, `AUTH_ISSUER` and `AUTH_AUDIENCE`. The library validates
+the token and exposes the user UUID from its `id` claim. Social needs no shared JWT secret.
 
-1. Get a token from Auth's login route.
+1. Obtain a token from Auth (see the registration example in the README).
 2. Click **Authorize** and enter `Bearer <token>`. The `Bearer ` prefix must be typed: with
    Swagger 2.0 the UI sends the value as-is.
 3. Click **Try it out** on a route, then **Execute**.
@@ -68,7 +69,7 @@ header and error responses.
 | `@Tags` | Groups routes in the UI (`health`, `posts`, ...). |
 | `@Accept json` | Request body content type. Only for routes with a body. |
 | `@Produce json` | Response content type. |
-| `@Security BearerAuth` | The route requires a JWT. Add it to every route behind `middleware.Auth`. |
+| `@Security BearerAuth` | The route requires a JWT. Add it to every route behind `authenticator.RequireAuth` from `authkit-go`. |
 | `@Param name in type required "description"` | A parameter. `in` is `path`, `query`, `header`, or `body`. For `body`, `type` is a struct such as `dto.CreatePostRequest`. |
 | `@Success code {object} Type` | Successful response and its body type. |
 | `@Failure code {object} Type` | Error response. Use `dto.ErrorResponse` for errors written as `{"error": "..."}`. |
@@ -80,7 +81,7 @@ Formatting rules:
 - Keep the `// FuncName godoc` line and the empty `//` line, and indent the annotations with a tab
   after `//`, so `gofmt` does not reflow them.
 - Types are referenced as `package.Type`, and the handler file must import that package.
-- Errors from `middleware.Auth` are plain text (`unauthorized`), hence `{string} string` on `401`.
+- Errors from `authenticator.RequireAuth` are plain text (`Unauthorized`), hence `{string} string` on `401`.
 
 The full syntax is in the
 [swag documentation](https://github.com/swaggo/swag#declarative-comments-format).
@@ -127,7 +128,7 @@ loop. If an annotation is invalid, air shows the swag error and keeps the previo
 | Symptom | Cause / fix |
 |---|---|
 | A route is missing from the UI, or shows old data | The spec was not regenerated: run `make swagger`. `TestSwaggerRoutes` in `internal/router` also fails when a documented route is missing. |
-| `401` from **Try it out** | Missing `Bearer ` prefix, expired token, or `JWT_SECRET_KEY` different from Auth's. |
+| `401` from **Try it out** | Check the `Bearer ` prefix, token validity, Auth's JWKS availability, and the configured issuer and audience. |
 | `cannot find type definition: dto.X` | The handler file does not import the `dto` package, or `--parseInternal` is missing. |
 | `warning: failed to get package name in dir: ./` | Harmless: the repository root has no Go files. |
 | The API exits with `ping database: context deadline exceeded` | Not Swagger-related: the Neon compute was suspended and took too long to wake up. Start the API again. |
