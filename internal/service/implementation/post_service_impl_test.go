@@ -24,6 +24,10 @@ func (r *fakePostRepository) Create(_ context.Context, post model.Post) (model.P
 	return post, nil
 }
 
+func (r *fakePostRepository) GetByAuthorID(context.Context, string) ([]model.Post, error) {
+	return nil, nil
+}
+
 func TestCreatePostValidation(t *testing.T) {
 	authorID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
 	tooLongURL := strings.Repeat("a", 256)

@@ -32,6 +32,10 @@ func (q *deleteQueryRower) QueryRow(ctx context.Context, query string, args ...a
 	return q.row
 }
 
+func (q *deleteQueryRower) Query(context.Context, string, ...any) (pgx.Rows, error) {
+	return nil, errors.New("unexpected Query call")
+}
+
 func TestDelete(t *testing.T) {
 	storageErr := errors.New("database unavailable")
 	for _, tc := range []struct {
