@@ -17,7 +17,7 @@ func TestGetPostRoute(t *testing.T) {
 	a := testutil.NewAuth(t)
 	id := uuid.NewString()
 	repo := &recordingRepository{posts: []model.Post{{ID: id, AuthorID: uuid.NewString(), Content: "hello"}}}
-	routes := New(fakePinger{}, serviceimpl.NewPostService(repo), a.Authenticator)
+	routes := New(fakePinger{}, serviceimpl.NewPostService(repo), nil, a.Authenticator)
 	token := a.Token(t, a.Claims(uuid.New()))
 	for _, tc := range []struct {
 		name, id, token string

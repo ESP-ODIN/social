@@ -56,7 +56,7 @@ func TestDeletePostRoute(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			repo := &deleteRepository{recordingRepository{posts: []model.Post{{ID: id, AuthorID: authorID.String()}}}}
-			routes := New(fakePinger{}, serviceimpl.NewPostService(repo), a.Authenticator)
+			routes := New(fakePinger{}, serviceimpl.NewPostService(repo), nil, a.Authenticator)
 			request := func(method, path, token string) *httptest.ResponseRecorder {
 				req := httptest.NewRequest(method, path, nil)
 				if token != "" {
@@ -90,7 +90,7 @@ func TestDeletePostRoute(t *testing.T) {
 func TestDeletePostSwagger(t *testing.T) {
 	a := testutil.NewAuth(t)
 	rec := httptest.NewRecorder()
-	New(fakePinger{}, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/swagger/doc.json", nil))
+	New(fakePinger{}, nil, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/swagger/doc.json", nil))
 	var spec struct {
 		Paths map[string]map[string]struct {
 			Responses map[string]json.RawMessage `json:"responses"`
