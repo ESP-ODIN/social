@@ -41,6 +41,10 @@ func (q *fakeQueryRower) QueryRow(ctx context.Context, query string, args ...any
 	return q.row
 }
 
+func (q *fakeQueryRower) Query(context.Context, string, ...any) (pgx.Rows, error) {
+	return nil, errors.New("unexpected Query call")
+}
+
 func TestGetByID(t *testing.T) {
 	storageErr := errors.New("database unavailable")
 	url := "https://example.com/image.jpg"

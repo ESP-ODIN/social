@@ -63,3 +63,17 @@ func (r *recordingRepository) GetByID(_ context.Context, id string) (model.Post,
 	}
 	return model.Post{}, repository.ErrPostNotFound
 }
+
+func (r *recordingRepository) GetByAuthorID(_ context.Context, authorID string) ([]model.Post, error) {
+	var result []model.Post
+	for _, post := range r.posts {
+		if post.AuthorID == authorID {
+			result = append(result, post)
+		}
+	}
+	return result, nil
+}
+
+func (s *recordingPostService) GetByUserID(context.Context, string) ([]model.Post, error) {
+	return nil, nil
+}
