@@ -8,7 +8,7 @@ import (
 	"social/internal/service"
 )
 
-func New(db handler.Pinger, posts service.PostService, authenticator *authkit.Authenticator) http.Handler {
+func New(db handler.Pinger, posts service.PostService, likes service.LikeService, authenticator *authkit.Authenticator) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", handler.Health)
 	mux.HandleFunc("GET /ready", handler.Ready(db))
@@ -16,6 +16,7 @@ func New(db handler.Pinger, posts service.PostService, authenticator *authkit.Au
 	registerGetPostRoutes(mux, posts, authenticator)
 	registerGetUserPostsRoutes(mux, posts, authenticator)
 	registerDeletePostRoutes(mux, posts, authenticator)
+	registerLikeRoutes(mux, likes, authenticator)
 	registerSwaggerRoutes(mux)
 	return mux
 }
