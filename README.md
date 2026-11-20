@@ -122,6 +122,10 @@ invalid authentication returns 401, another author receives 403, and missing
 posts return 404. Unexpected storage errors return a generic 500. Reading or
 deleting the same post again returns 404.
 
+## API routes
+
+See [docs/ROUTES.md](docs/ROUTES.md) for the full list of available endpoints.
+
 ## API documentation (Swagger)
 
 The Swagger UI is served at `http://127.0.0.1:8080/swagger/index.html` (port `8090` with

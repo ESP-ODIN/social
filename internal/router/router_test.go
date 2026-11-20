@@ -53,7 +53,7 @@ func TestRoutes(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			New(fakePinger{err: tc.pingErr}, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+			New(fakePinger{err: tc.pingErr}, nil, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
 			if rec.Code != tc.status {
 				t.Fatalf("status = %d, want %d", rec.Code, tc.status)
 			}
@@ -76,7 +76,7 @@ func TestRoutes(t *testing.T) {
 func TestPostRequiresAuthentication(t *testing.T) {
 	a := testutil.NewAuth(t)
 	rec := httptest.NewRecorder()
-	New(fakePinger{}, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/posts", nil))
+	New(fakePinger{}, nil, nil, a.Authenticator).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/api/v1/posts", nil))
 	if rec.Code != http.StatusUnauthorized {
 		t.Fatalf("status = %d, want 401", rec.Code)
 	}
@@ -91,7 +91,7 @@ func TestPostRouteUsesJWTAuthor(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/posts", strings.NewReader(`{"content":"hello"}`))
 	req.Header.Set("Authorization", "Bearer "+token)
 	rec := httptest.NewRecorder()
-	routes := New(fakePinger{}, posts, a.Authenticator)
+	routes := New(fakePinger{}, posts, nil, a.Authenticator)
 	routes.ServeHTTP(rec, req)
 	if rec.Code != http.StatusCreated || !posts.called || posts.authorID != authorID || posts.request.Content != "hello" {
 		t.Fatalf("status = %d, called = %v, author = %s, request = %+v", rec.Code, posts.called, posts.authorID, posts.request)
@@ -103,7 +103,7 @@ func TestPostRouteUsesJWTAuthor(t *testing.T) {
 
 func TestSwaggerRoutes(t *testing.T) {
 	a := testutil.NewAuth(t)
-	handler := New(fakePinger{}, nil, a.Authenticator)
+	handler := New(fakePinger{}, nil, nil, a.Authenticator)
 	for _, path := range []string{"/swagger/index.html", "/swagger/doc.json"} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
@@ -157,7 +157,7 @@ func TestPostAuthenticationFailures(t *testing.T) {
 				req.Header.Set("Authorization", tc.header)
 			}
 			rec := httptest.NewRecorder()
-			New(fakePinger{}, posts, a.Authenticator).ServeHTTP(rec, req)
+			New(fakePinger{}, posts, nil, a.Authenticator).ServeHTTP(rec, req)
 			if rec.Code != http.StatusUnauthorized || posts.called {
 				t.Fatalf("status = %d, called = %v", rec.Code, posts.called)
 			}
@@ -179,7 +179,7 @@ func (r *recordingRepository) Create(_ context.Context, post model.Post) (model.
 func TestAuthenticatedCreationPersistsIdentityAndReusesJWKS(t *testing.T) {
 	a := testutil.NewAuth(t)
 	repo := &recordingRepository{}
-	routes := New(fakePinger{}, serviceimpl.NewPostService(repo), a.Authenticator)
+	routes := New(fakePinger{}, serviceimpl.NewPostService(repo), nil, a.Authenticator)
 	for i := 0; i < 2; i++ {
 		id := uuid.New()
 		claims := a.Claims(id)

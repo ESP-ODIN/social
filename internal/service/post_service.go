@@ -16,8 +16,11 @@ var ErrPostNotFound = model.ErrPostNotFound
 var ErrPostForbidden = errors.New("only the author can delete this post")
 var ErrPostUnauthorized = errors.New("unauthorized")
 
+var ErrInvalidUserID = errors.New("user id must be a non-zero UUID")
+
 type PostService interface {
 	Create(context.Context, uuid.UUID, dto.CreatePostRequest) (model.Post, error)
 	GetByID(context.Context, string) (model.Post, error)
+	GetByUserID(context.Context, string) ([]model.Post, error)
 	Delete(context.Context, string, uuid.UUID) error
 }

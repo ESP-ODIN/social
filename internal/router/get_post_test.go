@@ -17,7 +17,7 @@ func TestGetPostRoute(t *testing.T) {
 	a := testutil.NewAuth(t)
 	id := uuid.NewString()
 	repo := &recordingRepository{posts: []model.Post{{ID: id, AuthorID: uuid.NewString(), Content: "hello"}}}
-	routes := New(fakePinger{}, serviceimpl.NewPostService(repo), a.Authenticator)
+	routes := New(fakePinger{}, serviceimpl.NewPostService(repo), nil, a.Authenticator)
 	token := a.Token(t, a.Claims(uuid.New()))
 	for _, tc := range []struct {
 		name, id, token string
@@ -62,4 +62,18 @@ func (r *recordingRepository) GetByID(_ context.Context, id string) (model.Post,
 		}
 	}
 	return model.Post{}, repository.ErrPostNotFound
+}
+
+func (r *recordingRepository) GetByAuthorID(_ context.Context, authorID string) ([]model.Post, error) {
+	var result []model.Post
+	for _, post := range r.posts {
+		if post.AuthorID == authorID {
+			result = append(result, post)
+		}
+	}
+	return result, nil
+}
+
+func (s *recordingPostService) GetByUserID(context.Context, string) ([]model.Post, error) {
+	return nil, nil
 }

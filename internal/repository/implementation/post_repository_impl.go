@@ -10,6 +10,7 @@ import (
 
 type queryRower interface {
 	QueryRow(context.Context, string, ...any) pgx.Row
+	Query(context.Context, string, ...any) (pgx.Rows, error)
 }
 
 type postgresPostRepository struct {

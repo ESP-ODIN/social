@@ -60,7 +60,7 @@ func run() error {
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           router.New(pool, serviceimpl.NewPostService(repositoryimpl.NewPostRepository(pool)), authenticator),
+		Handler:           router.New(pool, serviceimpl.NewPostService(repositoryimpl.NewPostRepository(pool)), serviceimpl.NewLikeService(repositoryimpl.NewLikeRepository(pool)), authenticator),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,

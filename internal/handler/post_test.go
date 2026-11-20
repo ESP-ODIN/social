@@ -30,6 +30,8 @@ func (s *fakePostService) Create(_ context.Context, authorID uuid.UUID, _ dto.Cr
 	return s.post, s.err
 }
 
+func (s *fakePostService) GetByUserID(context.Context, string) ([]model.Post, error) { return nil, nil }
+
 func TestCreatePost(t *testing.T) {
 	const id = "550e8400-e29b-41d4-a716-446655440000"
 	a := testutil.NewAuth(t)
