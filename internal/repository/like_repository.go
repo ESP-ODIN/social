@@ -13,5 +13,6 @@ var ErrLikeNotFound = errors.New("like not found")
 
 type LikeRepository interface {
 	Create(context.Context, model.Like) (model.Like, error)
+	GetByPostID(ctx context.Context, postID string) ([]model.Like, error)
 	Delete(ctx context.Context, postID, userID string) error
 }

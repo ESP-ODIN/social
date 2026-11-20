@@ -11,5 +11,6 @@ import (
 
 func registerLikeRoutes(mux *http.ServeMux, likes service.LikeService, authenticator *authkit.Authenticator) {
 	mux.Handle("POST /api/v1/posts/{postId}/likes", authenticator.RequireAuth(handler.CreateLike(likes)))
+	mux.Handle("GET /api/v1/posts/{postId}/likes", authenticator.RequireAuth(handler.GetPostLikes(likes)))
 	mux.Handle("DELETE /api/v1/posts/{postId}/likes", authenticator.RequireAuth(handler.DeleteLike(likes)))
 }
